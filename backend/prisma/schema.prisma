@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,4 +5,252 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+model admin_users {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         AdminRole @default(RECEPTIONIST)
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model appointments {
+  id             String            @id @default(uuid())
+  clientId       String
+  professionalId String?
+  specialtyId    String?
+  serviceId      String?
+  scheduledAt    DateTime
+  status         AppointmentStatus @default(PENDING)
+  source         AppointmentSource @default(BOTPRESS)
+  notes          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  clients        clients           @relation(fields: [clientId], references: [id])
+  professionals  professionals?    @relation(fields: [professionalId], references: [id])
+  services       services?         @relation(fields: [serviceId], references: [id])
+  specialties    specialties?      @relation(fields: [specialtyId], references: [id])
+
+  @@index([clientId])
+  @@index([professionalId])
+  @@index([scheduledAt])
+  @@index([status])
+}
+
+model clients {
+  id            String          @id @default(uuid())
+  firstName     String?
+  lastName      String?
+  phone         String          @unique
+  email         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  appointments  appointments[]
+  conversations conversations[]
+  leads         leads[]
+}
+
+model conversations {
+  id         String             @id @default(uuid())
+  clientId   String
+  externalId String?            @unique
+  status     ConversationStatus @default(OPEN)
+  startedAt  DateTime           @default(now())
+  closedAt   DateTime?
+  clients    clients            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  leads      leads[]
+  messages   messages[]
+
+  @@index([clientId])
+}
+
+model leads {
+  id             String         @id @default(uuid())
+  clientId       String
+  conversationId String?
+  specialtyId    String?
+  serviceId      String?
+  status         LeadStatus     @default(NEW)
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  clients        clients        @relation(fields: [clientId], references: [id])
+  conversations  conversations? @relation(fields: [conversationId], references: [id])
+  services       services?      @relation(fields: [serviceId], references: [id])
+  specialties    specialties?   @relation(fields: [specialtyId], references: [id])
+
+  @@index([clientId])
+  @@index([status])
+}
+
+model messages {
+  id             String        @id @default(uuid())
+  conversationId String
+  sender         MessageSender
+  type           MessageType
+  content        String?
+  mediaUrl       String?
+  metadata       Json?
+  createdAt      DateTime      @default(now())
+  conversations  conversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+model professional_services {
+  professionalId String
+  serviceId      String
+  professionals  professionals @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  services       services      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([professionalId, serviceId])
+}
+
+model professional_specialties {
+  professionalId String
+  specialtyId    String
+  professionals  professionals @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  specialties    specialties   @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  @@id([professionalId, specialtyId])
+}
+
+model professionals {
+  id                       String                     @id @default(uuid())
+  firstName                String
+  lastName                 String?
+  title                    String?
+  active                   Boolean                    @default(true)
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  appointments             appointments[]
+  professional_services    professional_services[]
+  professional_specialties professional_specialties[]
+  schedules                schedules[]
+}
+
+model schedules {
+  id             String        @id @default(uuid())
+  professionalId String
+  specialtyId    String?
+  serviceId      String?
+  type           ScheduleType
+  dayOfWeek      DayOfWeek?
+  startTime      String?
+  endTime        String?
+  notes          String?
+  professionals  professionals @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  services       services?     @relation(fields: [serviceId], references: [id])
+  specialties    specialties?  @relation(fields: [specialtyId], references: [id])
+
+  @@index([professionalId])
+  @@index([serviceId])
+  @@index([specialtyId])
+}
+
+model services {
+  id                    String                  @id @default(uuid())
+  name                  String                  @unique
+  description           String?
+  category              ServiceCategory
+  price                 Decimal?                @db.Decimal(10, 2)
+  currency              String                  @default("BOB")
+  active                Boolean                 @default(true)
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  appointments          appointments[]
+  leads                 leads[]
+  professional_services professional_services[]
+  schedules             schedules[]
+}
+
+model specialties {
+  id                       String                     @id @default(uuid())
+  name                     String                     @unique
+  description              String?
+  active                   Boolean                    @default(true)
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  appointments             appointments[]
+  leads                    leads[]
+  professional_specialties professional_specialties[]
+  schedules                schedules[]
+}
+
+enum ServiceCategory {
+  DIAGNOSTIC
+  REHABILITATION
+  COMPLEMENTARY
+  OTHER
+}
+
+enum ScheduleType {
+  FIXED
+  ON_CALL
+  TO_COORDINATE
+  EMERGENCY
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum ConversationStatus {
+  OPEN
+  CLOSED
+  HUMAN_ATTENTION
+}
+
+enum MessageSender {
+  CLIENT
+  BOT
+  STAFF
+}
+
+enum MessageType {
+  TEXT
+  AUDIO
+  IMAGE
+}
+
+enum LeadStatus {
+  NEW
+  QUALIFIED
+  CONTACTED
+  APPOINTMENT_BOOKED
+  CLOSED
+  LOST
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum AppointmentSource {
+  BOTPRESS
+  DASHBOARD
+  PHONE
+  WHATSAPP
+  MANUAL
+}
+
+enum AdminRole {
+  ADMIN
+  RECEPTIONIST
+  DOCTOR
 }
