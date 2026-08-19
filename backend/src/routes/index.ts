@@ -10,6 +10,17 @@ import leadRoutes from "../modules/leads/lead.routes";
 import appointmentRoutes from "../modules/appointments/appointment.routes";
 import analyticsRoutes from "../modules/analytics/analytics.routes";
 import botpressRoutes from "../modules/botpress/botpress.routes";
+import kbRoutes from "../modules/knowledge-base/kb.routes";
+import authRoutes from "../modules/auth/auth.routes";
+import escalationRoutes from "../modules/escalations/escalation.routes";
+import followUpRoutes from "../modules/follow-ups/follow-up.routes";
+import alertRoutes from "../modules/alerts/alert.routes";
+import reportRoutes from "../modules/reports/report.routes";
+import surveyRoutes from "../modules/surveys/survey.routes";
+import duplicateRoutes from "../modules/duplicates/duplicate.routes";
+import auditRoutes from "../modules/audit-logs/audit.routes";
+import ocrRoutes from "../modules/ocr/ocr.routes";
+import speechRoutes from "../modules/speech/speech.routes";
 
 const router = Router();
 
@@ -24,5 +35,16 @@ router.use("/leads", leadRoutes);
 router.use("/appointments", appointmentRoutes);
 router.use("/analytics", analyticsRoutes);
 router.use("/botpress", botpressRoutes);
+router.use("/knowledge-base", kbRoutes);
+router.use("/auth", authRoutes);
+router.use("/escalations", escalationRoutes);
+router.use("/follow-ups", followUpRoutes);
+router.use("/alerts", alertRoutes);
+router.use("/reports", reportRoutes);
+router.use("/surveys", surveyRoutes);
+router.use("/duplicates", duplicateRoutes);
+router.use("/audit-logs", auditRoutes);
+router.use("/ocr", ocrRoutes);
+router.use("/speech", speechRoutes);
 
 export default router;
